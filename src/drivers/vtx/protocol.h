@@ -38,6 +38,13 @@
 #include <uORB/topics/vtx.h>
 #include "../vtxtable/VtxTable.hpp"
 
+#if defined(__PX4_NUTTX) && defined(CONFIG_STM32H7_USART_SWAP) && defined(CONFIG_BOARD_SERIAL_TEL3)
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <nuttx/serial/tioctl.h>
+#endif
+
 namespace vtx
 {
 
@@ -63,6 +70,27 @@ public:
 
 	inline int init(const char *device)
 	{
+#if defined(__PX4_NUTTX) && defined(CONFIG_STM32H7_USART_SWAP) && defined(CONFIG_BOARD_SERIAL_TEL3)
+
+		/* A previous MAVLink configuration can leave USART2 TX/RX swapped.
+		 * Tramp and SmartAudio use the normal TX pad for half-duplex IO.
+		 */
+		if (strcmp(device, CONFIG_BOARD_SERIAL_TEL3) == 0) {
+			const int fd = ::open(device, O_RDWR | O_NONBLOCK);
+
+			if (fd < 0 || ::ioctl(fd, TIOCSSWAP, 0) < 0) {
+				PX4_ERR("VTX UART swap reset failed");
+
+				if (fd >= 0) { ::close(fd); }
+
+				return PX4_ERROR;
+			}
+
+			::close(fd);
+		}
+
+#endif
+
 		if (_serial == nullptr) {
 			_serial = new device::Serial(device, _baudrate);
 

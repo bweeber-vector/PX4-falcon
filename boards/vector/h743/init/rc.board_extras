@@ -1,0 +1,22 @@
+#!/bin/sh
+# Vector's write-only SPI2 OSD. -V selects its protocol/font explicitly.
+if param greater OSD_ATXXXX_CFG 0
+then
+    atxxxx -s -b 2 -m 3 -f 5000 -V start
+fi
+
+if param compare SYS_AUTOSTART 4091
+then
+    # Initialise the VTX power table only on first use. Never overwrite a
+    # saved user table. Tramp values are milliwatts, not SmartAudio dBm.
+    if ! vtxtable load
+    then
+        vtxtable name Hammer_Tramp
+        vtxtable bands 1
+        vtxtable channels 8
+        vtxtable band 1 RACEBAND R CUSTOM 5658 5695 5732 5769 5806 5843 5880 5917
+        vtxtable powerlevels 1
+        vtxtable powervalues 25
+        vtxtable powerlabels 25
+    fi
+fi

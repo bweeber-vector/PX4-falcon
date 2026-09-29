@@ -124,7 +124,26 @@ int ICM45686::probe()
 	for (int i = 0; i < 3; i++) {
 		const uint8_t whoami = RegisterRead(Register::BANK_0::WHO_AM_I);
 
-		if (whoami == WHOAMI) {
+		if (whoami == WHOAMI_ICM45686) {
+			return PX4_OK;
+		}
+
+		if (whoami == WHOAMI_ICM45605) {
+			_is_icm45605 = true;
+			_px4_accel.set_device_type(DRV_IMU_DEVTYPE_ICM45605);
+			_px4_gyro.set_device_type(DRV_IMU_DEVTYPE_ICM45605);
+
+			for (auto &reg : _register_bank0_cfg) {
+				if (reg.reg == Register::BANK_0::GYRO_CONFIG0) {
+					reg.set_bits = GYRO_CONFIG0_BIT::GYRO_UI_FS_SEL_2000_DPS_SET | GYRO_CONFIG0_BIT::GYRO_ODR_6400_HZ_SET;
+					reg.clear_bits = GYRO_CONFIG0_BIT::GYRO_UI_FS_SEL_2000_DPS_CLEAR | GYRO_CONFIG0_BIT::GYRO_ODR_6400_HZ_CLEAR;
+
+				} else if (reg.reg == Register::BANK_0::ACCEL_CONFIG0) {
+					reg.set_bits = ACCEL_CONFIG0_BIT::ACCEL_UI_FS_SEL_16_G_SET | ACCEL_CONFIG0_BIT::ACCEL_ODR_6400_HZ_SET;
+					reg.clear_bits = ACCEL_CONFIG0_BIT::ACCEL_UI_FS_SEL_16_G_CLEAR | ACCEL_CONFIG0_BIT::ACCEL_ODR_6400_HZ_CLEAR;
+				}
+			}
+
 			return PX4_OK;
 		}
 
@@ -149,7 +168,7 @@ void ICM45686::RunImpl()
 		break;
 
 	case STATE::WAIT_FOR_RESET:
-		if ((RegisterRead(Register::BANK_0::WHO_AM_I) == WHOAMI)
+		if ((RegisterRead(Register::BANK_0::WHO_AM_I) == (_is_icm45605 ? WHOAMI_ICM45605 : WHOAMI_ICM45686))
 		    && ((RegisterRead(Register::BANK_0::REG_MISC2) & Bit1) == 0x0)) {
 
 			// Wakeup accel and gyro and schedule remaining configuration
@@ -348,11 +367,14 @@ bool ICM45686::Configure()
 		}
 	}
 
-	// 16-bit FIFO (FIFO_HIRES_EN clear). Full-scale is ±4000 dps / ±32 g.
-	_px4_accel.set_range(32.f * CONSTANTS_ONE_G);
-	_px4_gyro.set_range(math::radians(4000.f));
-	_px4_accel.set_scale(32.f * CONSTANTS_ONE_G / 32768.f);
-	_px4_gyro.set_scale(math::radians(4000.f / 32768.f));
+	// Both parts use the 16-bit FIFO. ICM45605 supports ±16 g / ±2000 dps
+	// where ICM45686 is configured for ±32 g / ±4000 dps.
+	const float accel_range_g = _is_icm45605 ? 16.f : 32.f;
+	const float gyro_range_dps = _is_icm45605 ? 2000.f : 4000.f;
+	_px4_accel.set_range(accel_range_g * CONSTANTS_ONE_G);
+	_px4_gyro.set_range(math::radians(gyro_range_dps));
+	_px4_accel.set_scale(accel_range_g * CONSTANTS_ONE_G / 32768.f);
+	_px4_gyro.set_scale(math::radians(gyro_range_dps / 32768.f));
 
 	return success;
 }

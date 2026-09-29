@@ -151,6 +151,7 @@ private:
 	hrt_abstime _temperature_update_timestamp{0};
 	int _failure_count{0};
 
+	bool _is_icm45605{false};
 	bool _enable_clock_input{false};
 	float _input_clock_freq{0.f};
 

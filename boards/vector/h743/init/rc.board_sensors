@@ -1,0 +1,5 @@
+#!/bin/sh
+# Vector H743 revision 1: ICM45605 on SPI1; BMP388 on internal I2C2.
+board_adc start
+icm45686 -s -b 1 -f 8000 -R 0 start
+bmp388 -I -b 2 -a 0x76 start

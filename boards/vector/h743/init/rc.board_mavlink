@@ -1,0 +1,7 @@
+#!/bin/sh
+# The generic Vector airframe starts MAVLink on the payload port.
+# Hammer V AC reserves this UART for the custom ESAD protocol.
+if ! param compare SYS_AUTOSTART 4091
+then
+    mavlink start -d /dev/ttyS3 -b 115200 -m normal -x
+fi

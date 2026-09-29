@@ -40,6 +40,7 @@
  * Driver for the ATXXXX chip on the omnibus fcu connected via SPI.
  */
 #include <drivers/device/spi.h>
+#include <math.h>
 #include <drivers/drv_hrt.h>
 #include <parameters/param.h>
 #include <px4_platform_common/px4_config.h>
@@ -51,6 +52,20 @@
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/input_rc.h>
+#include <uORB/topics/manual_control_setpoint.h>
+#include <uORB/topics/sensor_accel.h>
+#include <uORB/topics/sensor_gyro.h>
+#include <uORB/topics/sensor_baro.h>
+#include <uORB/topics/vehicle_magnetometer.h>
+#include <uORB/topics/sensor_gps.h>
+#include "vector_osd.h"
+#include <uORB/topics/vehicle_attitude.h>
+#include <uORB/topics/vehicle_global_position.h>
+#include <uORB/topics/home_position.h>
+#include <uORB/topics/vehicle_land_detected.h>
+#include <uORB/topics/log_message.h>
+#include <uORB/topics/vtx.h>
 
 #define OSD_SPI_BUS_SPEED (2000000L) /*  2 MHz  */
 
@@ -76,12 +91,59 @@ public:
 	int init() override;
 
 	void RunImpl();
+	void print_status() override;
 
 protected:
 	int probe() override;
 
 private:
 	int start();
+	int update_vector_screen();
+	void render_vector_diagnostics();
+	void render_vector_hud();
+	void load_vector_callsign();
+	void vector_line(unsigned row, const char *format, ...) __attribute__((format(printf, 3, 4)));
+
+	const bool _vector;
+	char _vector_screen[vector_osd::PAL_ROWS][vector_osd::COLUMNS] {};
+	uint32_t _vector_frames{0};
+	uint32_t _vector_errors{0};
+	uORB::Subscription _attitude_sub{ORB_ID(vehicle_attitude)};
+	uORB::Subscription _global_position_sub{ORB_ID(vehicle_global_position)};
+	uORB::Subscription _home_sub{ORB_ID(home_position)};
+	uORB::Subscription _land_sub{ORB_ID(vehicle_land_detected)};
+	uORB::Subscription _log_sub{ORB_ID(log_message)};
+	uORB::Subscription _vtx_sub{ORB_ID(vtx)};
+	hrt_abstime _hud_last_update{0};
+	uint64_t _hud_flight_us{0};
+	float _hud_distance{0.f};
+	float _hud_current{NAN};
+	char _hud_callsign[13] {};
+	log_message_s _hud_message{};
+	// Keep telemetry buffers off the shared SPI work-queue's small stack.
+	struct HudTelemetry {
+		vehicle_status_s status{};
+		vehicle_attitude_s attitude{};
+		vehicle_local_position_s local{};
+		home_position_s home{};
+		vehicle_global_position_s global{};
+		input_rc_s rc{};
+		battery_status_s battery{};
+		sensor_gps_s gps{};
+		vehicle_land_detected_s land{};
+		vtx_s vtx{};
+		log_message_s message{};
+	} _hud_telemetry{};
+
+
+	uORB::Subscription _rc_sub{ORB_ID(input_rc)};
+	uORB::Subscription _manual_sub{ORB_ID(manual_control_setpoint)};
+	uORB::Subscription _accel_sub{ORB_ID(sensor_accel)};
+	uORB::Subscription _gyro_sub{ORB_ID(sensor_gyro)};
+	uORB::Subscription _baro_sub{ORB_ID(sensor_baro)};
+	uORB::Subscription _mag_sub{ORB_ID(vehicle_magnetometer)};
+	uORB::Subscription _gps_sub{ORB_ID(vehicle_gps_position)};
+
 
 	int reset();
 
@@ -128,6 +190,10 @@ private:
 	uint8_t _nav_state{0};
 
 	DEFINE_PARAMETERS(
-		(ParamInt<px4::params::OSD_ATXXXX_CFG>) _param_osd_atxxxx_cfg
+		(ParamInt<px4::params::OSD_VEC_LAYOUT>) _param_osd_vec_layout,
+		(ParamInt<px4::params::OSD_VEC_CELLS>) _param_osd_vec_cells,
+		(ParamInt<px4::params::OSD_ATXXXX_CFG>) _param_osd_atxxxx_cfg,
+		(ParamInt<px4::params::OSD_ATXXXX_HOFF>) _param_osd_atxxxx_hoff,
+		(ParamInt<px4::params::OSD_ATXXXX_VOFF>) _param_osd_atxxxx_voff
 	)
 };

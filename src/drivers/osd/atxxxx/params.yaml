@@ -15,3 +15,38 @@ parameters:
         2: PAL
       default: 0
       reboot_required: true
+    OSD_ATXXXX_HOFF:
+      description:
+        short: Vector OSD horizontal offset
+        long: Horizontal offset register for the write-only Vector backend.
+      type: int32
+      min: 0
+      max: 63
+      default: 15
+      reboot_required: true
+    OSD_ATXXXX_VOFF:
+      description:
+        short: Vector OSD vertical offset
+        long: Vertical offset register for the write-only Vector backend.
+      type: int32
+      min: 0
+      max: 31
+      default: 16
+      reboot_required: true
+    OSD_VEC_LAYOUT:
+      description:
+        short: Vector OSD screen layout
+        long: Select the Hammer ArduPilot OSD1 layout or the sensor and RC diagnostic screen. Only affects the Vector backend.
+      type: enum
+      values:
+        0: Bench diagnostics
+        1: Hammer flight display
+      default: 1
+    OSD_VEC_CELLS:
+      description:
+        short: Vector OSD battery cell count
+        long: Cell count for average-cell voltage display only. Six matches the saved Hammer OSD_CELL_COUNT. Zero uses battery_status cell count. Does not configure battery failsafes.
+      type: int32
+      min: 0
+      max: 16
+      default: 6

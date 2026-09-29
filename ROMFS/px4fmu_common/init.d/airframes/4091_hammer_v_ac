@@ -1,0 +1,156 @@
+#!/bin/sh
+#
+# @name Hammer V AC (Vector H743)
+# @type Quadrotor x
+# @class Copter
+#
+# @maintainer Vector H743 community
+#
+# @board vector_h743 include
+#
+
+. ${R}etc/init.d/rc.mc_defaults
+
+# Hammer-V-Ardupilot-params-AC.param: FRAME_TYPE=18 (BetaFlight X reversed).
+# SERVO1..4_FUNCTION=Motor4, Motor1, Motor2, Motor3. Rotor indices follow
+# physical Vector outputs 1..4, including the reversed yaw directions.
+# Output 1: front-left CCW; 2: rear-right CCW;
+# Output 3: front-right CW; 4: rear-left CW.
+param set-default CA_ROTOR_COUNT 4
+param set-default CA_ROTOR0_PX 1
+param set-default CA_ROTOR0_PY -1
+param set-default CA_ROTOR0_KM 0.05
+param set-default CA_ROTOR1_PX -1
+param set-default CA_ROTOR1_PY 1
+param set-default CA_ROTOR1_KM 0.05
+param set-default CA_ROTOR2_PX 1
+param set-default CA_ROTOR2_PY 1
+param set-default CA_ROTOR2_KM -0.05
+param set-default CA_ROTOR3_PX -1
+param set-default CA_ROTOR3_PY -1
+param set-default CA_ROTOR3_KM -0.05
+param set-default PWM_MAIN_FUNC1 101
+param set-default PWM_MAIN_FUNC2 102
+param set-default PWM_MAIN_FUNC3 103
+param set-default PWM_MAIN_FUNC4 104
+param set-default PWM_MAIN_TIM0 -6
+
+# AHRS_ORIENTATION=8 is Roll 180 degrees in both rotation tables.
+param set-default SENS_BOARD_ROT 8
+
+# ACRO_RP_RATE / ACRO_Y_RATE are 280 degrees per second.
+param set-default MC_ACRO_R_MAX 280
+param set-default MC_ACRO_P_MAX 280
+param set-default MC_ACRO_Y_MAX 280
+param set-default MC_ROLLRATE_MAX 280
+param set-default MC_PITCHRATE_MAX 280
+param set-default MC_YAWRATE_MAX 280
+# PILOT_Y_RATE=202.5 deg/s controls pilot yaw outside Acro.
+# ATC_SLEW_YAW=6000 cdeg/s limits yaw targets in Auto/RTL.
+param set-default MPC_MAN_Y_MAX 202.5
+param set-default MPC_YAWRAUTO_MAX 60
+# ANGLE_MAX=80 degrees. PX4's manual tilt parameter is limited to 70.
+param set-default MPC_MAN_TILT_MAX 70
+param set-default MPC_TILTMAX_AIR 80
+
+# WPNAV_SPEED=1800 cm/s, WPNAV_ACCEL=500 cm/s^2, WPNAV_JERK=1 m/s^3.
+param set-default MPC_XY_VEL_MAX 18
+param set-default MPC_XY_CRUISE 18
+param set-default MPC_ACC_HOR 5
+param set-default MPC_ACC_HOR_MAX 5
+param set-default MPC_JERK_AUTO 1
+# ArduPilot's 12.5/4.5 m/s climb/descent exceed PX4's 8/4 m/s limits.
+param set-default MPC_Z_VEL_MAX_UP 8
+param set-default MPC_Z_V_AUTO_UP 8
+param set-default MPC_Z_VEL_MAX_DN 4
+param set-default MPC_Z_V_AUTO_DN 4
+param set-default MPC_ACC_UP_MAX 5
+param set-default MPC_ACC_DOWN_MAX 5
+# LAND_SPEED=50 cm/s; PX4's minimum is 0.6 m/s.
+param set-default MPC_LAND_SPEED 0.6
+
+# Low-pass values approximate INS_ACCEL_FILTER=60 and INS_GYRO_FILTER=60.
+# RPM-tracked notch approximates INS_HNTCH; verify from ESC RPM and logs.
+param set-default IMU_ACCEL_CUTOFF 60
+param set-default IMU_GYRO_CUTOFF 60
+param set-default IMU_DGYRO_CUTOFF 37.5
+param set-default IMU_GYRO_DNF_EN 1
+param set-default IMU_GYRO_DNF_HMC 3
+param set-default IMU_GYRO_DNF_MIN 80
+param set-default IMU_GYRO_DNF_BW 30
+
+# Hammer's measured current scale supersedes the generic board default.
+param set-default BAT1_V_DIV 11
+param set-default BAT1_A_PER_V 160
+param set-default BAT1_CAPACITY 15000
+
+# Hammer serial roles: TEL1 GPSD-adjacent MAVLink, TEL2 MAVLink2,
+# TEL3 Tramp half-duplex, UART4 ESAD (unsupported), USART6 serial RC,
+# USART3 GNSS, UART8 ESC telemetry.
+param set-default SER_TEL1_BAUD 921600
+param set-default MAV_0_CONFIG 101
+param set-default MAV_0_MODE 2
+param set-default MAV_0_RATE 0
+param set-default MAV_0_FLOW_CTRL 0
+param set-default MAV_1_CONFIG 102
+param set-default MAV_1_MODE 0
+param set-default MAV_2_CONFIG 0
+param set-default VTX_SER_CFG 103
+param set-default VTX_PROTOCOL 100
+param set-default RC_PORT_CONFIG 300
+param set-default SER_GPS1_BAUD 230400
+param set-default GPS_1_CONFIG 201
+param set-default DSHOT_TEL_CFG 6
+
+# Hammer's mLRS output channel order is TAER. Values are initial defaults;
+# calibrate against the actual receiver and verify each direction on the bench.
+param set-default COM_RC_IN_MODE 0
+param set-default RC_MAP_THROTTLE 1
+param set-default RC_MAP_ROLL 2
+param set-default RC_MAP_PITCH 3
+param set-default RC_MAP_YAW 4
+param set-default RC1_MIN 1000
+param set-default RC1_MAX 2000
+param set-default RC1_TRIM 1000
+param set-default RC1_REV 1
+param set-default RC2_MIN 1000
+param set-default RC2_MAX 2000
+param set-default RC2_TRIM 1500
+param set-default RC2_REV 1
+param set-default RC3_MIN 1000
+param set-default RC3_MAX 2000
+param set-default RC3_TRIM 1500
+# PX4 positive manual pitch = nose down; ArduPilot positive = nose up.
+# Thus Hammer RC3_REVERSED=1 becomes PX4 RC3_REV=+1, not -1.
+param set-default RC3_REV 1
+param set-default RC4_MIN 1000
+param set-default RC4_MAX 2000
+param set-default RC4_TRIM 1500
+param set-default RC4_REV 1
+param set-default RC_MAP_ARM_SW 5
+param set-default COM_ARM_SWISBTN 0
+param set-default RC_MAP_FLTMODE 6
+# ArduPilot slots: Acro, Acro, Stabilize, Stabilize, Loiter, Loiter.
+param set-default COM_FLTMODE1 6
+param set-default COM_FLTMODE2 6
+param set-default COM_FLTMODE3 8
+param set-default COM_FLTMODE4 8
+param set-default COM_FLTMODE5 2
+param set-default COM_FLTMODE6 2
+# Keep airmode disabled until control tuning is validated.
+param set-default MC_AIRMODE 0
+param set-default MAV_1_FLOW_CTRL 0
+
+# GNSS antenna position relative to the aircraft reference point (metres).
+param set-default SENS_GPS0_OFFX 0.07
+param set-default SENS_GPS0_OFFY -0.02
+param set-default SENS_GPS0_OFFZ -0.15
+param set-default SYS_HAS_MAG 1
+param set-default SENS_EXT_I2C_PRB 1
+
+# Vector's ArduPilot backend starts in PAL; NTSC can be selected with value 1.
+param set-default OSD_ATXXXX_CFG 2
+# Direct frequency avoids assuming the same band numbering in VTX tables.
+param set-default VTX_FREQUENCY 5658
+param set-default VTX_POWER 0
+param set-default VTX_PIT_MODE 0

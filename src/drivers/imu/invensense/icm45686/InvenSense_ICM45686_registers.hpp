@@ -58,7 +58,8 @@ static constexpr uint8_t Bit7 = (1 << 7);
 static constexpr uint32_t SPI_SPEED = 24 * 1000 * 1000; // 24 MHz SPI
 static constexpr uint8_t DIR_READ = 0x80;
 
-static constexpr uint8_t WHOAMI = 0xE9;
+static constexpr uint8_t WHOAMI_ICM45686 = 0xE9;
+static constexpr uint8_t WHOAMI_ICM45605 = 0xE5;
 
 static constexpr float TEMPERATURE_SENSITIVITY = 128.f; // LSB/C
 static constexpr float TEMPERATURE_OFFSET = 25.f; // C
